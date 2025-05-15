@@ -90,7 +90,7 @@ curl -X POST "http://localhost:8000/products/" -H "accept: application/json" -H 
 
 2. Create a user:
 ```bash
-curl -X POST "http://localhost:8000/users/" -H "accept: application/json" -H "Content-Type: application/json" -d "{\"username\": \"testuser\", \"email\": \"test@example.com\", \"password\": \"password123\"}"
+curl -X POST "http://localhost:8000/users/" -H "accept: application/json" -H "Content-Type: application/json" -d "{\"username\": \"testuser\", \"email\": \"test@example.com\", \"password\": \"Str0ng!P@ssw0rd\"}"
 ```
 
 ## Architecture

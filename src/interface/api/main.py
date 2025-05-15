@@ -13,10 +13,10 @@ from src.infrastructure.repositories.in_memory_user_repository import InMemoryUs
 from src.infrastructure.repositories.in_memory_cart_repository import InMemoryCartRepository
 from src.infrastructure.repositories.in_memory_order_repository import InMemoryOrderRepository
 from .schemas import (
-    Product, ProductCreate,
-    User, UserCreate,
-    CartItem, CartItemCreate,
-    Order, OrderCreate,
+    Product, ProductCreate, ProductUpdate,
+    User, UserCreate, UserUpdate,
+    CartItem, CartItemCreate, CartItemUpdate,
+    Order, OrderCreate, OrderUpdate, OrderItem,
     OrderStatus
 )
 
@@ -81,7 +81,7 @@ def get_product(
 @app.put("/products/{product_id}", response_model=Product)
 def update_product(
     product_id: UUID,
-    product: ProductCreate,
+    product: ProductUpdate,
     product_service: ProductService = Depends(get_product_service)
 ):
     try:
@@ -131,6 +131,22 @@ def get_user(
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+@app.put("/users/{user_id}", response_model=User)
+def update_user(
+    user_id: UUID,
+    user: UserUpdate,
+    user_service: UserService = Depends(get_user_service)
+):
+    try:
+        return user_service.update_user(
+            user_id,
+            user.username,
+            user.email,
+            user.password
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 # Cart endpoints
 @app.post("/carts/{user_id}/items")
 def add_to_cart(
@@ -153,6 +169,19 @@ def get_cart(
     if cart is None:
         return []
     return cart
+
+@app.put("/carts/{user_id}/items/{product_id}")
+def update_cart_item(
+    user_id: UUID,
+    product_id: UUID,
+    item: CartItemUpdate,
+    cart_service: CartService = Depends(get_cart_service)
+):
+    try:
+        cart_service.update_cart_item(user_id, product_id, item.quantity)
+        return {"message": "Cart item updated successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @app.delete("/carts/{user_id}/items/{product_id}")
 def remove_from_cart(
@@ -194,15 +223,14 @@ def get_user_orders(
 ):
     return order_service.get_user_orders(user_id)
 
-@app.put("/orders/{order_id}/status")
-def update_order_status(
+@app.put("/orders/{order_id}", response_model=Order)
+def update_order(
     order_id: UUID,
-    status: OrderStatus,
+    order: OrderUpdate,
     order_service: OrderService = Depends(get_order_service)
 ):
     try:
-        domain_status = DomainOrderStatus(status.value)
-        order_service.update_order_status(order_id, domain_status)
-        return {"message": "Order status updated successfully"}
+        domain_status = DomainOrderStatus(order.status.value) if order.status else None
+        return order_service.update_order(order_id, domain_status)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) 
+        raise HTTPException(status_code=404, detail=str(e)) 
